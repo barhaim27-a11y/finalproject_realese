@@ -29,13 +29,21 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
-# Auto-download dataset if missing
+# ======================
+# Load or download dataset
+# ======================
 if not os.path.exists(DATA_PATH):
-    print("⚠️ Dataset not found locally – downloading from UCI repository...")
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/parkinsons/parkinsons.data"
-    df_raw = pd.read_csv(url, header=0)
-    df_raw.to_csv(DATA_PATH, index=False)
-    print(f"✅ Dataset downloaded and saved to {DATA_PATH}")
+    try:
+        print("⚠️ Dataset not found locally – downloading from UCI repository...")
+        url = "https://archive.ics.uci.edu/ml/machine-learning-databases/parkinsons/parkinsons.data"
+        df_raw = pd.read_csv(url, header=0)
+        df_raw.to_csv(DATA_PATH, index=False)
+        print(f"✅ Dataset downloaded and saved to {DATA_PATH}")
+    except Exception as e:
+        raise FileNotFoundError(
+            f"❌ Could not find local dataset and failed to download from UCI. "
+            f"Please place parkinsons.csv inside {DATA_DIR}. Error: {e}"
+        )
 
 # Load dataset
 df = pd.read_csv(DATA_PATH)
@@ -72,6 +80,7 @@ for name, model in models.items():
     y_pred_test = pipe.predict(X_test)
     y_prob_train = pipe.predict_proba(X_train)[:,1]
     y_prob_test = pipe.predict_proba(X_test)[:,1]
+
     metrics_train = {
         "accuracy": accuracy_score(y_train, y_pred_train),
         "precision": precision_score(y_train, y_pred_train),
@@ -86,24 +95,30 @@ for name, model in models.items():
         "f1": f1_score(y_test, y_pred_test),
         "roc_auc": roc_auc_score(y_test, y_prob_test),
     }
+
     leaderboard[name] = {"train": metrics_train, "test": metrics_test}
+
     if metrics_test["roc_auc"] > best_auc:
         best_auc = metrics_test["roc_auc"]
         best_model = pipe
         best_name = name
         joblib.dump(pipe, os.path.join(MODELS_DIR, f"{name}_model.joblib"))
 
+# Save best model
 best_model_path = os.path.join(MODELS_DIR, "best_model.joblib")
 joblib.dump(best_model, best_model_path)
 
+# Save metrics of best model only
 metrics_path = os.path.join(ASSETS_DIR, "metrics.json")
 with open(metrics_path, "w") as f:
     json.dump(leaderboard[best_name], f, indent=2)
 
+# Save leaderboard of all models
 leaderboard_path = os.path.join(ASSETS_DIR, "leaderboard.json")
 with open(leaderboard_path, "w") as f:
     json.dump(leaderboard, f, indent=2)
 
+# Append to training log
 log_path = os.path.join(ASSETS_DIR, "training_log.csv")
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 log_entry = {"timestamp": now, "best_model": best_name, "roc_auc": best_auc}
@@ -113,6 +128,7 @@ if os.path.exists(log_path):
 else:
     log_df.to_csv(log_path, index=False)
 
+# SHAP explainer function
 def compute_shap_values(model, X_sample):
     try:
         explainer = shap.Explainer(model.named_steps["clf"], X_sample)
