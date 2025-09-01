@@ -7,6 +7,8 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
     f1_score, roc_auc_score
 )
+
+# מודלים
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -80,8 +82,8 @@ for name, model in models.items():
     # Predictions
     y_pred_train = pipe.predict(X_train)
     y_pred_test = pipe.predict(X_test)
-    y_prob_train = pipe.predict_proba(X_train)[:,1]
-    y_prob_test = pipe.predict_proba(X_test)[:,1]
+    y_prob_train = pipe.predict_proba(X_train)[:, 1]
+    y_prob_test = pipe.predict_proba(X_test)[:, 1]
 
     # Metrics
     metrics_train = {
@@ -115,7 +117,7 @@ for name, model in models.items():
 best_model_path = os.path.join(MODELS_DIR, "best_model.joblib")
 joblib.dump(best_model, best_model_path)
 
-# Metrics of best model → בדיוק בפורמט שהאפליקציה מצפה לו
+# Metrics of best model → בפורמט מלא (train + test)
 metrics_path = os.path.join(ASSETS_DIR, "metrics.json")
 with open(metrics_path, "w") as f:
     json.dump(leaderboard[best_name], f, indent=2)
