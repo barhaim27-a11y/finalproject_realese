@@ -1,6 +1,5 @@
 import os, json, joblib, datetime
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -116,7 +115,7 @@ for name, model in models.items():
 best_model_path = os.path.join(MODELS_DIR, "best_model.joblib")
 joblib.dump(best_model, best_model_path)
 
-# Metrics of best model
+# Metrics of best model → בדיוק בפורמט שהאפליקציה מצפה לו
 metrics_path = os.path.join(ASSETS_DIR, "metrics.json")
 with open(metrics_path, "w") as f:
     json.dump(leaderboard[best_name], f, indent=2)
@@ -125,15 +124,5 @@ with open(metrics_path, "w") as f:
 leaderboard_path = os.path.join(ASSETS_DIR, "leaderboard.json")
 with open(leaderboard_path, "w") as f:
     json.dump(leaderboard, f, indent=2)
-
-# Training log
-log_path = os.path.join(ASSETS_DIR, "training_log.csv")
-now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-log_entry = {"timestamp": now, "best_model": best_name, "roc_auc": best_auc}
-log_df = pd.DataFrame([log_entry])
-if os.path.exists(log_path):
-    log_df.to_csv(log_path, mode="a", header=False, index=False)
-else:
-    log_df.to_csv(log_path, index=False)
 
 print(f"✅ Training complete. Best model: {best_name} (ROC-AUC={best_auc:.3f})")
